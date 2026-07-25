@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,22 +9,33 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>{
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
 
-  void _handleLogin(){
+
+  void _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (email.isNotEmpty && password.isNotEmpty){
-      context.read<AuthProvider>().login(email, password);
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.login(email, password);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!success && authProvider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(authProvider.errorMessage!),
+        backgroundColor: Colors.redAccent,
+      ));
     }
   }
 
   @override
-  void dispose(){
+  void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -33,72 +43,82 @@ class _LoginScreenState extends State<LoginScreen>{
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty){
-                      return 'Please enter an email';
-                    }
-                    // Email Regex
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!emailRegex.hasMatch(value)){
-                      return 'Please Enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                // Password Text Field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Password',
+        appBar: AppBar(title: const Text('Login')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an email';
+                      }
+                      // Email Regex
+                      final emailRegex =
+                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Please Enter a valid email address';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              const SizedBox(height: 16),
-              // Login Button
-              ElevatedButton(
-                onPressed: () {
-                  if(_formKey.currentState!.validate()){
-                    _handleLogin();
-                  }
-                },
-                child: const Text('Login'),
+                  const SizedBox(height: 12),
+                  // Password Text Field
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Password',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Login Button
+                  ElevatedButton(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () {
+                            if (_formKey.currentState!.validate()) {
+                              _handleLogin();
+                            }
+                          },
+                    child: authProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Login'),
+                  ),
+                  const SizedBox(height: 20),
+                  // Create New Account Button
+                  ElevatedButton(
+                    onPressed: /*_handleCreateNewAcccount*/ () {
+                      // Add 'Create New Account' functionality here
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[800],
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    child: const Text(
+                      'Create New Account',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              // Create New Account Button
-              ElevatedButton(
-                onPressed: /*_handleCreateNewAcccount*/ () {
-                  // Add 'Create New Account' functionality here
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800],
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                child: const Text(
-                  'Create New Account',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-              ],
             ),
           ),
-        ),
-      )
-    );
+        ));
   }
 }
