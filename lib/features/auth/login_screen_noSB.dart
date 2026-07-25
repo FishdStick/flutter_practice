@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -52,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen>{
                       return 'Please enter an email';
                     }
                     // Email Regex
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
                     if (!emailRegex.hasMatch(value)){
                       return 'Please Enter a valid email address';
                     }

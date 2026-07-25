@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       // Email Regex
                       final emailRegex =
-                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
                       if (!emailRegex.hasMatch(value)) {
                         return 'Please Enter a valid email address';
                       }
