@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/posts/feed_screen.dart';
 import '../../features/posts/create_post_screen.dart';
+import '../../features/posts/post_detail_screen.dart';
 
 GoRouter createRouter(BuildContext context){
   return GoRouter(
@@ -26,6 +27,13 @@ GoRouter createRouter(BuildContext context){
         path: '/create-post',
         builder: (context, state) => const CreatePostScreen(),
       ),
+      GoRoute(
+        path: '/post/:id',
+        builder: (context, state) {
+          final postId = state.pathParameters['id']!;
+          return PostDetailScreen(postId: postId);
+        }
+      )
     ],
 
     // Route Guarding
