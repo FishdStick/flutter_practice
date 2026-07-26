@@ -40,37 +40,32 @@ class Post {
 class PostProvider extends ChangeNotifier {
   List<Post> _posts = [];
   bool _isLoading = false;
-  bool _hasMore = true;
-  int _currentPage = 0;
-  final int _pageSize = 5;
+  int _currentPage = 1;
+  int _totalPages = 1;
+  final int _pageSize = 6;
 
+  // Apparently these are getters ig they use =>
   List<Post> get posts => _posts;
 
   bool get isLoading => _isLoading;
 
-  bool get hasMore => _hasMore;
+  int get currentPage => _currentPage;
+
+  int get totalPages => _totalPages;
 
   // Fetches posts to be paginated
-  Future<void> fetchPosts({bool refresh = false}) async {
-    if (_isLoading) {
-      return;
-    }
-
-    if (refresh) {
-      _currentPage = 0;
-      _hasMore = true;
-      _posts = [];
-    }
-
-    if (!_hasMore) {
-      return;
-    }
-
+  Future<void> fetchPage(int page) async {
     _isLoading = true;
+    _currentPage = page;
     notifyListeners();
 
     try {
-      final from = _currentPage * _pageSize;
+      final countResponse = await supabase.from('posts').select('*');
+      final totalCount = (countResponse as List).length;
+      // Upper limit of pages
+      _totalPages = (totalCount / _pageSize).ceil();
+      if (_totalPages < 1) _totalPages = 1;
+      final from = (page - 1) * _pageSize;
       final to = (from + _pageSize) - 1;
 
       final response = await supabase
@@ -78,19 +73,9 @@ class PostProvider extends ChangeNotifier {
           .select()
           .order('created_at', ascending: false)
           .range(from, to);
-
-      final fetchedPosts =
-          (response as List).map((e) => Post.fromJson(e)).toList();
-
-      // Pagination logic?
-      if (fetchedPosts.length < _pageSize) {
-        _hasMore = false;
-      }
-
-      _posts.addAll(fetchedPosts);
-      _currentPage++;
+      _posts = (response as List).map((e) => Post.fromJson(e)).toList();
     } catch (e) {
-      debugPrint('Error Fetching posts: $e');
+      debugPrint('Error fetching posts! $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -143,7 +128,7 @@ class PostProvider extends ChangeNotifier {
         'image_urls': imageUrls,
       });
 
-      await fetchPosts(refresh: true);
+      await fetchPage(1);
       return true;
     } catch (e) {
       debugPrint('Error Creating Post: $e');
@@ -159,6 +144,7 @@ class PostProvider extends ChangeNotifier {
     try {
       await supabase.from('posts').delete().eq('id', postId);
       _posts.removeWhere((post) => post.id == postId);
+      await fetchPage(_currentPage);
       return true;
     } catch (e) {
       debugPrint('Error Deleting Post: $e');
