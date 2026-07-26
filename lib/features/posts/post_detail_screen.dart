@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
 import '../comments/comment_section.dart';
 
@@ -33,8 +34,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     final postProvider = context.watch<PostProvider>();
     final post = postProvider.getPostById(widget.postId);
+
+    final isOwner =
+        authProvider.isLoggedIn && authProvider.currentUser?.id == post?.userId;
 
     if (post == null) {
       return Scaffold(
@@ -62,6 +67,65 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => context.go('/'),
         ),
+        actions: [
+          if (isOwner && post != null)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  context.push('/edit-post/${post.id}');
+                } else if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Post'),
+                      content: const Text(
+                          'Are you sure you want to delete this post?'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete',
+                              style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    final deleted = await postProvider.deletePost(post.id);
+                    if (context.mounted && deleted) {
+                      context.go('/');
+                    }
+                  }
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 20),
+                      SizedBox(width: 8),
+                      Text('Edit Post'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, size: 20, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Delete Post', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
       body: Center(
         child: ConstrainedBox(
@@ -195,13 +259,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 Text(
                   post.content,
                   style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.6,
-                    color: Colors.black87
-                  ),
+                      fontSize: 16, height: 1.6, color: Colors.black87),
                 ),
                 const SizedBox(height: 32),
-                
+
                 CommentSection(postId: post.id),
               ],
             ),
