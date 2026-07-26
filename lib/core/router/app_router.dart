@@ -3,11 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
-// Pages for later
+// Screens
 import '../../features/auth/login_screen.dart';
 import '../../features/posts/feed_screen.dart';
 import '../../features/posts/create_post_screen.dart';
 import '../../features/posts/post_detail_screen.dart';
+import '../../features/posts/edit_post_screen.dart';
 
 GoRouter createRouter(BuildContext context){
   return GoRouter(
@@ -33,7 +34,14 @@ GoRouter createRouter(BuildContext context){
           final postId = state.pathParameters['id']!;
           return PostDetailScreen(postId: postId);
         }
-      )
+      ),
+      GoRoute(
+        path: '/edit-post/:id',
+        builder: (context, state) {
+          final postId = state.pathParameters['id']!;
+          return EditPostScreen(postId: postId);
+        },
+      ),
     ],
 
     // Route Guarding
