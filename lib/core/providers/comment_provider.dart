@@ -3,31 +3,31 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
 
-class Post {
+class Comment {
   final String id;
+  final String postId;
   final String userId;
   final String authorEmail;
-  final String title;
   final String content;
   final List<String> imageUrls;
   final DateTime createdAt;
 
-  Post({
+  Comment({
     required this.id,
+    required this.postId,
     required this.userId,
     required this.authorEmail,
-    required this.title,
     required this.content,
     required this.imageUrls,
     required this.createdAt,
   });
 
-  factory Post.fromJson(Map<String, dynamic> json) {
-    return Post(
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
       id: json['id'] as String,
+      postId: json['post_id'] as String,
       userId: json['user_id'] as String,
       authorEmail: json['author_email'] ?? 'Anonymous User',
-      title: json['title'] ?? 'No Title',
       content: json['content'] ?? 'No Content',
       imageUrls: List<String>.from(json['image_urls'] ?? []),
       createdAt: json['created_at'] != null
@@ -37,74 +37,46 @@ class Post {
   }
 }
 
-class PostProvider extends ChangeNotifier {
-  List<Post> _posts = [];
+class CommentProvider extends ChangeNotifier {
+  // Maps Post to post comments
+  final Map<String, List<Comment>> _comments = {};
   bool _isLoading = false;
-  bool _hasMore = true;
-  int _currentPage = 0;
-  final int _pageSize = 5;
 
-  List<Post> get posts => _posts;
-
-  bool get isLoading => _isLoading;
-
-  bool get hasMore => _hasMore;
-
-  // Fetches posts to be paginated
-  Future<void> fetchPosts({bool refresh = false}) async {
-    if (_isLoading) {
-      return;
-    }
-
-    if (refresh) {
-      _currentPage = 0;
-      _hasMore = true;
-      _posts = [];
-    }
-
-    if (!_hasMore) {
-      return;
-    }
-
+  List<Comment> getCommentsForPost(String postId) {
+    return _comments[postId] ?? [];
+  }
+  // Fetches comments under a post via post_id
+  Future<void> fetchComments(String postId) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final from = _currentPage * _pageSize;
-      final to = (from + _pageSize) - 1;
-
       final response = await supabase
-          .from('posts')
+          .from('comments')
           .select()
-          .order('created_at', ascending: false)
-          .range(from, to);
+          .eq('post_id', postId)
+          .order('created_at', ascending: true);
+      final fetched = (response as List).map((json) => Comment.fromJson(json)).toList();
+      _comments[postId] = fetched;
 
-      final fetchedPosts =
-          (response as List).map((e) => Post.fromJson(e)).toList();
-
-      // Pagination logic?
-      if (fetchedPosts.length < _pageSize) {
-        _hasMore = false;
-      }
-
-      _posts.addAll(fetchedPosts);
-      _currentPage++;
     } catch (e) {
-      debugPrint('Error Fetching posts: $e');
+      debugPrint('Error fetching comments: $e');
+
     } finally {
       _isLoading = false;
       notifyListeners();
+
     }
   }
 
-  // Upload Images
+  // Upload Images in comments
   Future<List<String>> _uploadImages(List<XFile> images) async {
     List<String> uploadedUrls = [];
     for (var image in images) {
       final bytes = await image.readAsBytes();
       final fileExt = image.name.split('.').last;
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      final path = 'posts/$fileName';
+      final path = 'comments/$fileName';
 
       await supabase.storage.from('blog_images').uploadBinary(
             path,
@@ -118,54 +90,48 @@ class PostProvider extends ChangeNotifier {
     return uploadedUrls;
   }
 
-  // Create Post
-  Future<bool> createPost({
-    required String title,
+  // Create Comment
+  Future<bool> addComment({
+    required String postId,
     required String content,
     required List<XFile> selectedImages,
   }) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
       final user = supabase.auth.currentUser;
-      if (user == null) {
-        return false;
-      }
+      if (user == null) return false;
 
       final imageUrls = await _uploadImages(selectedImages);
 
-      await supabase.from('posts').insert({
+      // Parameterized insert()?
+      await supabase.from('comments').insert({
+        'post_id': postId,
         'user_id': user.id,
-        'author_email': user.email ?? 'Unknown User',
-        'title': title,
+        'author_email': user.email ?? 'Anonymous',
         'content': content,
         'image_urls': imageUrls,
       });
 
-      await fetchPosts(refresh: true);
+      await fetchComments(postId);
       return true;
     } catch (e) {
-      debugPrint('Error Creating Post: $e');
+      debugPrint('Error adding comment: $e');
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
-  // Delete Post
-  Future<bool> deletePost(String postId) async {
+  // Delete Comment
+  Future<bool> deleteComment(String commentId, String postId) async {
     try {
-      await supabase.from('posts').delete().eq('id', postId);
-      _posts.removeWhere((post) => post.id == postId);
+      await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId);
+      _comments[postId]?.removeWhere((c) => c.id == commentId);
+      notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Error Deleting Post: $e');
+      debugPrint('Error deleting comment: $e');
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 }

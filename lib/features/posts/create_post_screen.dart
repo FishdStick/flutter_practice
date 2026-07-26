@@ -18,7 +18,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _contentController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
 
   Future<void> _pickImages() async {
     final List<XFile> pickedFiles = await _picker.pickMultiImage();
@@ -35,10 +35,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
 
     final postProvider = context.read<PostProvider>();
+    final text = _contentController.text.trim();
 
     final success = await postProvider.createPost(
       title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
+      content: text,
       selectedImages: _selectedImages,
     );
 

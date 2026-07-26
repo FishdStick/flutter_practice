@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_practice/core/providers/comment_provider.dart';
 import 'package:flutter_practice/core/providers/post_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,6 +20,7 @@ void main() async{
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
+        ChangeNotifierProvider(create: (_) => CommentProvider()),
       ],
       child: const MyApp(),
     ),
@@ -27,6 +29,9 @@ void main() async{
 
 final supabase = Supabase.instance.client;
 
+/*
+TODO:
+*/
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
