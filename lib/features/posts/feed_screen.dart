@@ -18,7 +18,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
     // Fetches post when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PostProvider>().fetchPage(1);
+      context.read<PostProvider>().getPage(1);
     });
   }
 
@@ -77,7 +77,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     onRefresh: () async {
                       await context
                           .read<PostProvider>()
-                          .fetchPage(postProvider.currentPage);
+                          .getPage(postProvider.currentPage);
                     },
                     child: postProvider.isLoading
                         ? const Center(child: CircularProgressIndicator())
@@ -238,7 +238,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         icon: const Icon(Icons.chevron_left),
                         onPressed: postProvider.currentPage > 1
                             ? () => postProvider
-                                .fetchPage(postProvider.currentPage - 1)
+                                .getPage(postProvider.currentPage - 1)
                             : null,
                       ),
                       ...List.generate(
@@ -252,7 +252,7 @@ class _FeedScreenState extends State<FeedScreen> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 4.0),
                             child: InkWell(
-                              onTap: () => postProvider.fetchPage(pageNum),
+                              onTap: () => postProvider.getPage(pageNum),
                               borderRadius: BorderRadius.circular(4),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -282,7 +282,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         onPressed:
                             postProvider.currentPage < postProvider.totalPages
                                 ? () => postProvider
-                                    .fetchPage(postProvider.currentPage + 1)
+                                    .getPage(postProvider.currentPage + 1)
                                 : null,
                       ),
                     ],

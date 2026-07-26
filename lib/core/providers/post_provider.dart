@@ -46,15 +46,12 @@ class PostProvider extends ChangeNotifier {
 
   // Apparently these are getters ig they use =>
   List<Post> get posts => _posts;
-
   bool get isLoading => _isLoading;
-
   int get currentPage => _currentPage;
-
   int get totalPages => _totalPages;
 
   // Fetches posts to be paginated
-  Future<void> fetchPage(int page) async {
+  Future<void> getPage(int page) async {
     _isLoading = true;
     _currentPage = page;
     notifyListeners();
@@ -128,7 +125,7 @@ class PostProvider extends ChangeNotifier {
         'image_urls': imageUrls,
       });
 
-      await fetchPage(1);
+      await getPage(1);
       return true;
     } catch (e) {
       debugPrint('Error Creating Post: $e');
@@ -147,12 +144,43 @@ class PostProvider extends ChangeNotifier {
       return null;
     }
   }
+
+  // Update Post
+  Future<bool> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required List<String> existingImageUrls,
+    required List<XFile> newImages,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final newlyUploadedUrls = await _uploadImages(newImages);
+      final finalImageUrls = [...existingImageUrls, ...newlyUploadedUrls];
+
+      await supabase.from('posts').update({
+        'title': title,
+        'content': content,
+        'image_urls': finalImageUrls,
+      }).eq('id', postId);
+
+      await getPage(_currentPage);
+      return true;
+    } catch (e){
+      debugPrint('Error updating Post: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
   // Delete Post
   Future<bool> deletePost(String postId) async {
     try {
       await supabase.from('posts').delete().eq('id', postId);
       _posts.removeWhere((post) => post.id == postId);
-      await fetchPage(_currentPage);
+      await getPage(_currentPage);
       return true;
     } catch (e) {
       debugPrint('Error Deleting Post: $e');
