@@ -177,7 +177,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       onPressed: () {
                                         _pageController.previousPage(
                                             duration: const Duration(
-                                                microseconds: 300),
+                                                milliseconds: 300),
                                             curve: Curves.easeInOut);
                                       }))),
                         if (_currentImageIndex < post.imageUrls.length - 1)
@@ -191,7 +191,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       onPressed: () {
                                         _pageController.nextPage(
                                             duration: const Duration(
-                                                microseconds: 300),
+                                                milliseconds: 300),
                                             curve: Curves.easeInOut);
                                       }))),
                       ],
