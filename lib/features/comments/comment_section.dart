@@ -32,21 +32,64 @@ class _CommentSectionState extends State<CommentSection> {
     });
   }
 
+  // Makes comment-level images clickable and loads their full size
+  void _showImagePreview(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      // what's ctx?
+      // ctx apparently refers to the to the BuildContext
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: const Icon(Icons.broken_image, size: 60),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(ctx)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickImages() async {
     final List<XFile> pickedFiles = await _picker.pickMultiImage();
     if (pickedFiles.isNotEmpty) {
       // Why use set state here? Aren't we using provider for state management?
+      // setState() is best used for managing local UI state. By doing this,
+      // we make sure provider only manages global states.
       setState(() {
         _selectedImages.addAll(pickedFiles);
       });
     }
   }
 
-  void _submitComment() async {
+  void _postComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty && _selectedImages.isEmpty) return;
 
-    // Again, why use setState?
     setState(() => _isSubmitting = true);
     final commentProvider = context.read<CommentProvider>();
 
@@ -60,10 +103,7 @@ class _CommentSectionState extends State<CommentSection> {
     if (!mounted) {
       return;
     }
-
-    // Why setState?
     setState(() => _isSubmitting = false);
-
     if (success) {
       _commentController.clear();
       setState(() {
@@ -173,13 +213,19 @@ class _CommentSectionState extends State<CommentSection> {
                           itemCount: comment.imageUrls.length,
                           itemBuilder: (ctx, i) => Padding(
                             padding: const EdgeInsets.only(right: 6.0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.network(
-                                comment.imageUrls[i],
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
+
+                            // Clickable comment images
+                            child: InkWell(
+                              onTap: () => _showImagePreview(
+                                context, comment.imageUrls[i]),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  comment.imageUrls[i],
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
@@ -231,7 +277,7 @@ class _CommentSectionState extends State<CommentSection> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.send, color: Colors.blue),
-                  onPressed: _isSubmitting ? null : _submitComment),
+                  onPressed: _isSubmitting ? null : _postComment),
             ],
           ),
         ] else
