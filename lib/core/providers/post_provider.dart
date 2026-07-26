@@ -139,6 +139,14 @@ class PostProvider extends ChangeNotifier {
     }
   }
 
+  // Fetch Post by Id
+  Post? getPostById(String postId){
+    try {
+      return _posts.firstWhere((post) => post.id == postId);
+    } catch (_){
+      return null;
+    }
+  }
   // Delete Post
   Future<bool> deletePost(String postId) async {
     try {

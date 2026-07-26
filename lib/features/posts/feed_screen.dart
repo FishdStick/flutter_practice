@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
-import '../comments/comment_section.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -13,33 +12,26 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
 
     // Fetches post when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PostProvider>().fetchPosts(refresh: true);
+      context.read<PostProvider>().fetchPage(1);
     });
-
-    _scrollController.addListener(_onScroll);
-  }
-
-  // Fetch more posts when user has scrolled near the bottom
-  // I could paginate via actual pages instead of infinite scrolling.
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      context.read<PostProvider>().fetchPosts();
-    }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$month-$day-$year';
   }
 
   @override
@@ -49,15 +41,21 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Blog Feed'),
+        title: const Text('Your Feed'),
         actions: [
-          if (authProvider.isLoggedIn)
+          if (authProvider.isLoggedIn) ...[
+            TextButton.icon(
+              onPressed: () => context.go('/create-post'),
+              icon: const Icon(Icons.add, color: Colors.blue),
+              label:
+                  const Text('New Post', style: TextStyle(color: Colors.blue)),
+            ),
             IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Logout',
               onPressed: () => context.read<AuthProvider>().logout(),
-            )
-          else
+            ),
+          ] else
             TextButton(
               onPressed: () => context.go('/login'),
               child: const Text('Login',
@@ -66,167 +64,235 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
         ],
       ),
-      floatingActionButton: authProvider.isLoggedIn
-          ? FloatingActionButton.extended(
-              label: const Text('New Post'),
-              onPressed: () => context.go('/create-post'),
-              icon: const Icon(Icons.add),
-            )
-          : null,
       body: Center(
-          child: ConstrainedBox(
-        // Limits the size of the feed
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await context.read<PostProvider>().fetchPosts(refresh: true);
-          },
-          // TODO: Facebook style feed
-          child: postProvider.posts.isEmpty && postProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : postProvider.posts.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No posts yet.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      itemCount: postProvider.posts.length +
-                          (postProvider.hasMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == postProvider.posts.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        final post = postProvider.posts[index];
-                        final isOwner = authProvider.isLoggedIn &&
-                            authProvider.currentUser?.id == post.userId;
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Header for Author
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.account_circle,
-                                            size: 28, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          post.authorEmail,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          // Limits the size of the feed
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await context
+                          .read<PostProvider>()
+                          .fetchPage(postProvider.currentPage);
+                    },
+                    child: postProvider.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : postProvider.posts.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No posts yet.',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey),
+                                ),
+                              )
+                            // Dynamic layout builder depending on feed width
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  int crossAxisCount = 3;
+                                  if (constraints.maxWidth < 600) {
+                                    crossAxisCount = 1;
+                                  } else if (constraints.maxWidth < 900) {
+                                    crossAxisCount = 2;
+                                  }
+                                  return GridView.builder(
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                      childAspectRatio: 0.82,
                                     ),
-                                    if (isOwner)
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onPressed: () async {
-                                          final confirm =
-                                              await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Delete Post'),
-                                              content: const Text(
-                                                  'Are you sure you want to delete this post?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, false),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, true),
-                                                  child: const Text('Delete',
-                                                      style: TextStyle(
-                                                          color: Colors.red)),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true) {
-                                            await postProvider
-                                                .deletePost(post.id);
-                                          }
+                                    itemCount: postProvider.posts.length,
+                                    itemBuilder: (context, index) {
+                                      final post = postProvider.posts[index];
+                                      final formattedDate =
+                                          _formatDate(post.createdAt);
+
+                                      return InkWell(
+                                        onTap: () {
+                                          context.go('/post/${post.id}');
                                         },
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Post Title
-                                Text(
-                                  post.title,
-                                  style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                // Post Content
-                                Text(
-                                  post.content,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Post Image
-                                if (post.imageUrls.isNotEmpty)
-                                  SizedBox(
-                                    height: 120,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: post.imageUrls.length,
-                                      itemBuilder: (context, imgIndex) {
-                                        return Padding(
-                                          padding:
-                                              const EdgeInsets.only(right: 8.0),
-                                          child: ClipRRect(
+                                        child: Card(
+                                          clipBehavior: Clip.antiAlias,
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(8),
-                                            child: Image.network(
-                                              post.imageUrls[imgIndex],
-                                              width: 120,
-                                              height: 120,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error,
-                                                      stackTrace) =>
-                                                  const Icon(Icons.broken_image,
-                                                      size: 50),
-                                            ),
                                           ),
-                                        );
-                                      },
-                                    ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SizedBox(
+                                                height: 160,
+                                                width: double.infinity,
+                                                child: post.imageUrls.isNotEmpty
+                                                    ? Image.network(
+                                                        post.imageUrls.first,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (ctx, _, __) =>
+                                                                Container(
+                                                          color:
+                                                              Colors.grey[200],
+                                                          child: const Icon(
+                                                              Icons
+                                                                  .broken_image,
+                                                              size: 40),
+                                                        ),
+                                                      )
+                                                    : Container(
+                                                        color: Colors.grey[200],
+                                                        child: Icon(
+                                                          Icons
+                                                              .article_outlined,
+                                                          size: 48,
+                                                          color:
+                                                              Colors.grey[400],
+                                                        ),
+                                                      ),
+                                              ),
+                                              // Card Contents
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                      12.0),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      // Post Author
+                                                      Text(
+                                                        post.authorEmail
+                                                            .toUpperCase(),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                            fontSize: 10,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors
+                                                                .grey[600],
+                                                            letterSpacing: 0.8),
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      // Post Title
+                                                      Text(
+                                                        post.title,
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      // Post Content
+                                                      Text(
+                                                        post.content,
+                                                        maxLines: 3,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                            fontSize: 13,
+                                                            color: Colors
+                                                                .grey[700]),
+                                                      ),
+                                                      const Spacer(),
+                                                      Text(
+                                                        formattedDate,
+                                                        style: TextStyle(
+                                                            fontSize: 11,
+                                                            color: Colors
+                                                                .grey[500]),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ),
+
+                // Pagination Navigator
+                if (postProvider.totalPages > 1) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: postProvider.currentPage > 1
+                            ? () => postProvider
+                                .fetchPage(postProvider.currentPage - 1)
+                            : null,
+                      ),
+                      ...List.generate(
+                        postProvider.totalPages,
+                        (pageIdx) {
+                          final pageNum = pageIdx + 1;
+                          final isSelected =
+                              pageNum == postProvider.currentPage;
+
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: InkWell(
+                              onTap: () => postProvider.fetchPage(pageNum),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.blue
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '$pageNum',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black87,
                                   ),
-                                const SizedBox(height: 12),
-                                CommentSection(postId: post.id),
-                              ],
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed:
+                            postProvider.currentPage < postProvider.totalPages
+                                ? () => postProvider
+                                    .fetchPage(postProvider.currentPage + 1)
+                                : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-      )),
+      ),
     );
   }
 }
