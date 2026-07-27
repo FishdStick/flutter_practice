@@ -292,12 +292,15 @@ class _CommentSectionState extends State<CommentSection> {
                           ),
                         ),
                         if (isOwner)
-                          // Triple Dot 'more'
                           PopupMenuButton<String>(
                             icon: const Icon(Icons.more_vert, size: 16),
                             onSelected: (value) async {
                               if (value == 'edit') {
-                                _showEditCommentDialog(context, comment);
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (context.mounted) {
+                                    _showEditCommentDialog(context, comment);
+                                  }
+                                });
                               } else if (value == 'delete') {
                                 final confirm = await showDialog<bool>(
                                   context: context,
@@ -306,13 +309,13 @@ class _CommentSectionState extends State<CommentSection> {
                                     content: const Text(
                                         'Are you sure you want to delete this comment?'),
                                     actions: [
-                                      // Cancel button
+                                      // Cancel Button
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.pop(ctx, false),
                                         child: const Text('Cancel'),
                                       ),
-                                      // Delete button
+                                      // Delete Button
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.pop(ctx, true),
@@ -329,6 +332,7 @@ class _CommentSectionState extends State<CommentSection> {
                                 }
                               }
                             },
+                            // More button option items
                             itemBuilder: (context) => [
                               const PopupMenuItem(
                                 value: 'edit',
@@ -345,10 +349,12 @@ class _CommentSectionState extends State<CommentSection> {
                                 value: 'delete',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.edit, size: 16),
+                                    Icon(Icons.delete,
+                                        size: 16, color: Colors.red),
                                     SizedBox(width: 8),
                                     Text('Delete',
-                                        style: TextStyle(fontSize: 13, color: Colors.red)),
+                                        style: TextStyle(
+                                            fontSize: 13, color: Colors.red)),
                                   ],
                                 ),
                               ),
