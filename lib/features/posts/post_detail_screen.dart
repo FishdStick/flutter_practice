@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
 import '../comments/comment_section.dart';
+import '../../core/utils/format_date_utils.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -16,20 +17,13 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   final PageController _pageController = PageController();
+  final DateFormattingUtils formatDateUtil = DateFormattingUtils();
   int _currentImageIndex = 0;
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  // This should be in a util file we can use call
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$month-$day-$year';
   }
 
   @override
@@ -58,7 +52,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       );
     }
-    final formattedDate = _formatDate(post.createdAt);
+    final formattedDate = formatDateUtil.formatDate(post.createdAt);
 
     return Scaffold(
       appBar: AppBar(

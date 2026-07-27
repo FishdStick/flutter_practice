@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
+import '../../core/utils/format_date_utils.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -12,6 +13,8 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
+  final DateFormattingUtils formatDateUtil = DateFormattingUtils();
+
   @override
   void initState() {
     super.initState();
@@ -25,13 +28,6 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void dispose() {
     super.dispose();
-  }
-
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$month-$day-$year';
   }
 
   @override
@@ -109,8 +105,8 @@ class _FeedScreenState extends State<FeedScreen> {
                                     itemCount: postProvider.posts.length,
                                     itemBuilder: (context, index) {
                                       final post = postProvider.posts[index];
-                                      final formattedDate =
-                                          _formatDate(post.createdAt);
+                                      final formattedDate = formatDateUtil
+                                          .formatDate(post.createdAt);
 
                                       return InkWell(
                                         onTap: () {

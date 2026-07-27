@@ -10,11 +10,6 @@ class ImagePreviewRow extends StatelessWidget {
     required this.onDelete
   });
 
-  // bool _isNetworkUrl(String path) {
-  //   return path.startsWith('http://') || path.startsWith('https://') ||
-  //       path.startsWith('blob:');
-  // }
-
   @override
   Widget build(BuildContext context) {
     if (imageUrls.isEmpty) {

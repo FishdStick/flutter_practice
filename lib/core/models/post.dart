@@ -26,8 +26,8 @@ class Post {
       content: json['content'] ?? 'No Content',
       imageUrls: List<String>.from(json['image_urls'] ?? []),
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
+          ? DateTime.parse(json['created_at']).toLocal()
+          : DateTime.now().toLocal(),
     );
   }
 
@@ -35,12 +35,12 @@ class Post {
   Map <String, dynamic> toJson(){
     return{
       'id': id,
-      'userId': userId,
+      'user_id': userId,
       'author_email': authorEmail,
       'title': title,
       'content': content,
       'image_urls': imageUrls,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String()
     };
   }
 }
