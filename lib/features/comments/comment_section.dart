@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/comment_provider.dart';
 import '../posts/image_preview_row.dart';
+import '../../core/models/comment.dart';
 
 class CommentSection extends StatefulWidget {
   final String postId;
