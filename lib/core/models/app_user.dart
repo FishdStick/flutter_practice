@@ -1,0 +1,24 @@
+class AppUser{
+  final String id;
+  final String email;
+
+  AppUser({
+    required this.id,
+    required this.email
+  });
+
+  factory AppUser.fromJson(Map<String, dynamic> json){
+    return AppUser(
+      id: json['id'] as String,
+      email: json['email'] as String,
+    );
+  }
+
+  // AppUser Json Package
+  Map <String, dynamic> toJson(){
+    return{
+      'id': id,
+      'email': email,
+    };
+  }
+}
