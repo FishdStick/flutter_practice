@@ -68,7 +68,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           onPressed: () => context.go('/'),
         ),
         actions: [
-          if (isOwner && post != null)
+          if (isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (value) async {

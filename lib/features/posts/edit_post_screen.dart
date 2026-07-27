@@ -19,7 +19,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
 
-  final ImagePicker _picker = ImagePicker();
+  // final ImagePicker _picker = ImagePicker();
   List<String> _existingImageUrls = [];
   final List<XFile> _newImages = [];
 
@@ -34,14 +34,14 @@ class _EditPostScreenState extends State<EditPostScreen> {
     _existingImageUrls = List<String>.from(post?.imageUrls ?? []);
   }
 
-  Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles.isNotEmpty) {
-      setState(() {
-        _newImages.addAll(pickedFiles);
-      });
-    }
-  }
+  // Future<void> _pickImages() async {
+  //   final List<XFile> pickedFiles = await _picker.pickMultiImage();
+  //   if (pickedFiles.isNotEmpty) {
+  //     setState(() {
+  //       _newImages.addAll(pickedFiles);
+  //     });
+  //   }
+  // }
 
   void _submitUpdate() async {
     if (!_formKey.currentState!.validate()) return;
