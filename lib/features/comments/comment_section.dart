@@ -28,7 +28,7 @@ class _CommentSectionState extends State<CommentSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CommentProvider>().fetchComments(widget.postId);
+      context.read<CommentProvider>().getComments(widget.postId);
     });
   }
 
@@ -74,12 +74,119 @@ class _CommentSectionState extends State<CommentSection> {
     );
   }
 
+  // Edit Comment dialog box
+  void _showEditCommentDialog(BuildContext context, Comment comment) {
+    final editController = TextEditingController(text: comment.content);
+    List<String> existingUrls = List<String>.from(comment.imageUrls);
+    List<XFile> newImages = [];
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final allPreviewPaths = [
+            ...existingUrls,
+            ...newImages.map((e) => e.path),
+          ];
+
+          return AlertDialog(
+            title: const Text('Edit Comment'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Comment',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await _picker.pickMultiImage();
+                      if (picked.isNotEmpty) {
+                        setModalState(() {
+                          newImages.addAll(picked);
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.attach_file),
+                    label: Text('Attach images ${newImages.length}'),
+                  ),
+                  if (allPreviewPaths.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    ImagePreviewRow(
+                      imageUrls: allPreviewPaths,
+                      // What's idx and where does it come from? is it
+                      // similar to ctx to how it refers to build context?
+                      onDelete: (idx) {
+                        setModalState(() {
+                          if (idx < existingUrls.length) {
+                            existingUrls.removeAt(idx);
+                          } else {
+                            newImages.removeAt(idx - existingUrls.length);
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final text = editController.text.trim();
+                  if (text.isEmpty &&
+                      existingUrls.isEmpty &&
+                      newImages.isEmpty) {
+                    return;
+                  }
+                  final success = await context
+                      .read<CommentProvider>()
+                      .updateComment(
+                          commentId: comment.id,
+                          postId: widget.postId,
+                          content: text,
+                          existingImageUrls: existingUrls,
+                          newImages: newImages);
+
+                  if (dialogCtx.mounted) {
+                    Navigator.pop(dialogCtx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success
+                            ? 'Comment updated.'
+                            : 'Failed to update comment.'),
+                        backgroundColor:
+                            success ? Colors.green : Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _pickImages() async {
     final List<XFile> pickedFiles = await _picker.pickMultiImage();
     if (pickedFiles.isNotEmpty) {
       // Why use set state here? Aren't we using provider for state management?
-      // setState() is best used for managing local UI state. By doing this,
-      // we make sure provider only manages global states.
+      // Answer: setState() is best used for managing local UI state. By doing
+      // this, we make sure provider only manages global states.
       setState(() {
         _selectedImages.addAll(pickedFiles);
       });
@@ -185,16 +292,67 @@ class _CommentSectionState extends State<CommentSection> {
                           ),
                         ),
                         if (isOwner)
-                          InkWell(
-                            onTap: () => commentProvider.deleteComment(
-                              comment.id,
-                              widget.postId,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.red,
-                            ),
+                          // Triple Dot 'more'
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert, size: 16),
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                _showEditCommentDialog(context, comment);
+                              } else if (value == 'delete') {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Delete Comment'),
+                                    content: const Text(
+                                        'Are you sure you want to delete this comment?'),
+                                    actions: [
+                                      // Cancel button
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      // Delete button
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: const Text('Delete',
+                                            style:
+                                                TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await commentProvider.deleteComment(
+                                      comment.id, widget.postId);
+                                }
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Edit',
+                                        style: TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Delete',
+                                        style: TextStyle(fontSize: 13, color: Colors.red)),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                       ],
                     ),
@@ -217,7 +375,7 @@ class _CommentSectionState extends State<CommentSection> {
                             // Clickable comment images
                             child: InkWell(
                               onTap: () => _showImagePreview(
-                                context, comment.imageUrls[i]),
+                                  context, comment.imageUrls[i]),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Image.network(

@@ -46,7 +46,7 @@ class CommentProvider extends ChangeNotifier {
     return _comments[postId] ?? [];
   }
   // Fetches comments under a post via post_id
-  Future<void> fetchComments(String postId) async {
+  Future<void> getComments(String postId) async {
     _isLoading = true;
     notifyListeners();
 
@@ -111,10 +111,35 @@ class CommentProvider extends ChangeNotifier {
         'image_urls': imageUrls,
       });
 
-      await fetchComments(postId);
+      await getComments(postId);
       return true;
     } catch (e) {
       debugPrint('Error adding comment: $e');
+      return false;
+    }
+  }
+
+  // Update Post
+  Future<bool> updateComment({
+    required String commentId,
+    required String postId,
+    required String content,
+    required List<String> existingImageUrls,
+    required List<XFile> newImages,
+  }) async {
+    try {
+      final newlyUploadedUrls = await _uploadImages(newImages);
+      final finalImageUrls = [...existingImageUrls, ...newlyUploadedUrls];
+
+      await supabase.from('comments').update({
+        'content': content,
+        'image_urls': finalImageUrls,
+      }).eq('id', commentId);
+
+      await getComments(postId);
+      return true;
+    } catch (e){
+      debugPrint('Error updating comment: $e');
       return false;
     }
   }
