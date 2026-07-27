@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
+import '../models/app_user.dart';
+import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier{
+  final AuthService _authService = AuthService();
   late final StreamSubscription<AuthState> _authSubscription;
 
-  User? _currentUser;
+  AppUser? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -15,15 +18,15 @@ class AuthProvider extends ChangeNotifier{
   }
 
   bool get isLoggedIn => _currentUser != null;
-  User? get currentUser => _currentUser;
+  AppUser? get currentUser => _currentUser;
   String? get userEmail => _currentUser?.email;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   void _initAuthListener(){
-    _currentUser = supabase.auth.currentUser;
+    _currentUser = _authService.currentUser;
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      _currentUser = data.session?.user;
+      _currentUser = _authService.currentUser;
       notifyListeners();
     });
   }
@@ -34,10 +37,7 @@ class AuthProvider extends ChangeNotifier{
     _clearError();
 
     try {
-      await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      await _authService.login(email: email, password: password);
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
@@ -57,10 +57,7 @@ class AuthProvider extends ChangeNotifier{
     _clearError();
 
     try {
-      await supabase.auth.signUp(
-        email: email,
-        password: password,
-      );
+      await _authService.signUp(email: email, password: password);
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
@@ -76,7 +73,7 @@ class AuthProvider extends ChangeNotifier{
 
   Future<void> logout() async {
     _setLoading(true);
-    await supabase.auth.signOut();
+    await _authService.signOut();
     _setLoading(false);
   }
 
