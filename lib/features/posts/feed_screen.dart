@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_practice/features/widgets/post_card.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
-import '../../core/utils/format_date_utils.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -13,8 +13,6 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  final DateFormattingUtils formatDateUtil = DateFormattingUtils();
-
   @override
   void initState() {
     super.initState();
@@ -95,130 +93,23 @@ class _FeedScreenState extends State<FeedScreen> {
                                     crossAxisCount = 2;
                                   }
                                   return GridView.builder(
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: 0.82,
-                                    ),
-                                    itemCount: postProvider.posts.length,
-                                    itemBuilder: (context, index) {
-                                      final post = postProvider.posts[index];
-                                      final formattedDate = formatDateUtil
-                                          .formatDate(post.createdAt);
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: crossAxisCount,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                        childAspectRatio: 0.82,
+                                      ),
+                                      itemCount: postProvider.posts.length,
+                                      itemBuilder: (context, index) {
+                                        final post = postProvider.posts[index];
+                                        return PostCard(
+                                          post: post,
+                                          onTap: () =>
+                                              context.go('/post/${post.id}'),
+                                        );
 
-                                      return InkWell(
-                                        onTap: () {
-                                          context.go('/post/${post.id}');
-                                        },
-                                        child: Card(
-                                          clipBehavior: Clip.antiAlias,
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              SizedBox(
-                                                height: 160,
-                                                width: double.infinity,
-                                                child: post.imageUrls.isNotEmpty
-                                                    ? Image.network(
-                                                        post.imageUrls.first,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (ctx, _, __) =>
-                                                                Container(
-                                                          color:
-                                                              Colors.grey[200],
-                                                          child: const Icon(
-                                                              Icons
-                                                                  .broken_image,
-                                                              size: 40),
-                                                        ),
-                                                      )
-                                                    : Container(
-                                                        color: Colors.grey[200],
-                                                        child: Icon(
-                                                          Icons
-                                                              .article_outlined,
-                                                          size: 48,
-                                                          color:
-                                                              Colors.grey[400],
-                                                        ),
-                                                      ),
-                                              ),
-                                              // Card Contents
-                                              Expanded(
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                      12.0),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      // Post Author
-                                                      Text(
-                                                        post.authorEmail
-                                                            .toUpperCase(),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                            fontSize: 10,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Colors
-                                                                .grey[600],
-                                                            letterSpacing: 0.8),
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      // Post Title
-                                                      Text(
-                                                        post.title,
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: const TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      // Post Content
-                                                      Text(
-                                                        post.content,
-                                                        maxLines: 3,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                            fontSize: 13,
-                                                            color: Colors
-                                                                .grey[700]),
-                                                      ),
-                                                      const Spacer(),
-                                                      Text(
-                                                        formattedDate,
-                                                        style: TextStyle(
-                                                            fontSize: 11,
-                                                            color: Colors
-                                                                .grey[500]),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
+                                      });
                                 },
                               ),
                   ),
