@@ -27,7 +27,7 @@ class Comment {
       imageUrls: List<String>.from(json['image_urls'] ?? []),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at']).toLocal()
-          : DateTime.now().toLocal(),
+          : DateTime.now(),
     );
   }
 
