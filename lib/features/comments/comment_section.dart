@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_practice/core/utils/image_picker_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
@@ -34,9 +35,6 @@ class _CommentSectionState extends State<CommentSection> {
     });
   }
 
-  // Makes comment-level images clickable and loads their full size
-
-
   // Edit Comment dialog box
   void _showEditCommentDialog(BuildContext context, Comment comment) {
     final editController = TextEditingController(text: comment.content);
@@ -70,11 +68,9 @@ class _CommentSectionState extends State<CommentSection> {
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () async {
-                      final picked = await _picker.pickMultiImage();
-                      if (picked.isNotEmpty) {
-                        setModalState(() {
-                          newImages.addAll(picked);
-                        });
+                      if (await ImagePickerUtils.attachImagesTo(
+                          newImages)) {
+                        setModalState(() {});
                       }
                     },
                     icon: const Icon(Icons.attach_file),
@@ -259,7 +255,8 @@ class _CommentSectionState extends State<CommentSection> {
                             icon: const Icon(Icons.more_vert, size: 16),
                             onSelected: (value) async {
                               if (value == 'edit') {
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
                                   if (context.mounted) {
                                     _showEditCommentDialog(context, comment);
                                   }
@@ -343,8 +340,9 @@ class _CommentSectionState extends State<CommentSection> {
 
                             // Clickable comment images
                             child: InkWell(
-                              onTap: () => ImagePreviewUtils.expandSinglePreviewImage(
-                                  context, comment.imageUrls[i]),
+                              onTap: () =>
+                                  ImagePreviewUtils.expandSinglePreviewImage(
+                                      context, comment.imageUrls[i]),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Image.network(
@@ -382,7 +380,12 @@ class _CommentSectionState extends State<CommentSection> {
             children: [
               IconButton(
                 icon: const Icon(Icons.attach_file),
-                onPressed: _pickImages,
+                onPressed: () async {
+                  if (await ImagePickerUtils.attachImagesTo(
+                      _selectedImages)) {
+                    setState(() {});
+                  }
+                },
                 tooltip: 'Attach Images:',
               ),
               Expanded(
