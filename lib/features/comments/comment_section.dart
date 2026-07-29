@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/comment_provider.dart';
+import '../../core/utils/image_preview_utils.dart';
 import '../posts/image_preview_row.dart';
 import '../../core/models/comment.dart';
 
@@ -34,46 +35,7 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   // Makes comment-level images clickable and loads their full size
-  void _showImagePreview(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      // what's ctx?
-      // ctx apparently refers to the to the BuildContext
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            InteractiveViewer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.white,
-                    child: const Icon(Icons.broken_image, size: 60),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: CircleAvatar(
-                backgroundColor: Colors.black54,
-                child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(ctx)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   // Edit Comment dialog box
   void _showEditCommentDialog(BuildContext context, Comment comment) {
@@ -381,7 +343,7 @@ class _CommentSectionState extends State<CommentSection> {
 
                             // Clickable comment images
                             child: InkWell(
-                              onTap: () => _showImagePreview(
+                              onTap: () => ImagePreviewUtils.expandSinglePreviewImage(
                                   context, comment.imageUrls[i]),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
