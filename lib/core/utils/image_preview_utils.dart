@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class ImagePreviewUtils {
@@ -42,16 +44,15 @@ class ImagePreviewUtils {
     );
   }
 
-  /// Use in Post images
+  /// Used in Post images
   /// Expands an image or a set of images in a post and makes it navigable as an
   /// image carousel
-  static void expandPreviewImageGallery(
-      BuildContext context, List<String> imageUrls, int initialIndex) {
+  static void expandPreviewImageGallery(BuildContext context, List<String> imageUrls, int initialIndex) {
     showDialog(
       context: context,
       builder: (ctx) {
         final PageController modalPageController =
-        PageController(initialPage: initialIndex);
+            PageController(initialPage: initialIndex);
         int activeModalIndex = initialIndex;
 
         return StatefulBuilder(
@@ -160,5 +161,40 @@ class ImagePreviewUtils {
         );
       },
     );
+  }
+
+  /// Used when uploading images
+  /// Displays the thumbnails of the tentative images to be uploaded when
+  /// creating a post or a comment
+  static Widget showImagePreview(String path){
+    Widget buildErrorPlaceHolder(){
+      return Container(
+        width: 100,
+        height: 100,
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.grey,)
+      );
+    }
+
+    final isNetworkUrl = path.startsWith('http://') || path.startsWith('https://');
+    final isBlobUrl = kIsWeb && path.startsWith('blob:');
+
+    if (isNetworkUrl || isBlobUrl){
+      return Image.network(
+        path,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, error, stackTrace) => buildErrorPlaceHolder(),
+      );
+    } else {
+      return Image.file(
+        File(path),
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, error, stackTrace) => buildErrorPlaceHolder(),
+      );
+    }
   }
 }

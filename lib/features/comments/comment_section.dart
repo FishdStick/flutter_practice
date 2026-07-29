@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/comment_provider.dart';
 import '../../core/utils/image_preview_utils.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../posts/image_preview_row.dart';
 import '../../core/models/comment.dart';
 
@@ -17,13 +18,9 @@ class CommentSection extends StatefulWidget {
   State<CommentSection> createState() => _CommentSectionState();
 }
 
-// Im guessing this creates parameterized Generics that only accepts CommentSection
-// Why do classes that are subclasses of State, require the build method?
 class _CommentSectionState extends State<CommentSection> {
   final _commentController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
 
-  // compared to create_post, why is this not final?
   List<XFile> _selectedImages = [];
   bool _isSubmitting = false;
 
@@ -68,8 +65,7 @@ class _CommentSectionState extends State<CommentSection> {
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () async {
-                      if (await ImagePickerUtils.attachImagesTo(
-                          newImages)) {
+                      if (await ImagePickerUtils.attachImagesTo(newImages)) {
                         setModalState(() {});
                       }
                     },
@@ -120,15 +116,12 @@ class _CommentSectionState extends State<CommentSection> {
 
                   if (dialogCtx.mounted) {
                     Navigator.pop(dialogCtx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(success
-                            ? 'Comment updated.'
-                            : 'Failed to update comment.'),
-                        backgroundColor:
-                            success ? Colors.green : Colors.redAccent,
-                      ),
-                    );
+                    if (success) {
+                      SnackBarUtils.showSuccess(context, 'Comment updated.');
+                    } else {
+                      SnackBarUtils.showError(
+                          context, 'Failed to update comment');
+                    }
                   }
                 },
                 child: const Text('Save'),
@@ -138,18 +131,6 @@ class _CommentSectionState extends State<CommentSection> {
         },
       ),
     );
-  }
-
-  Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles.isNotEmpty) {
-      // Why use set state here? Aren't we using provider for state management?
-      // Answer: setState() is best used for managing local UI state. By doing
-      // this, we make sure provider only manages global states.
-      setState(() {
-        _selectedImages.addAll(pickedFiles);
-      });
-    }
   }
 
   void _postComment() async {
@@ -175,19 +156,9 @@ class _CommentSectionState extends State<CommentSection> {
       setState(() {
         _selectedImages = [];
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comment posted successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      SnackBarUtils.showSuccess(context, 'Comment posted');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to post comment!'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      SnackBarUtils.showError(context, 'Failed to post comment');
     }
   }
 
@@ -381,8 +352,7 @@ class _CommentSectionState extends State<CommentSection> {
               IconButton(
                 icon: const Icon(Icons.attach_file),
                 onPressed: () async {
-                  if (await ImagePickerUtils.attachImagesTo(
-                      _selectedImages)) {
+                  if (await ImagePickerUtils.attachImagesTo(_selectedImages)) {
                     setState(() {});
                   }
                 },

@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/post_provider.dart';
+import '../../core/utils/snackbar_utils.dart';
 import 'image_preview_row.dart';
 
 class EditPostScreen extends StatefulWidget {
@@ -50,17 +51,10 @@ class _EditPostScreenState extends State<EditPostScreen> {
     }
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Post updated'), backgroundColor: Colors.green),
-      );
+      SnackBarUtils.showSuccess(context, 'Post updated');
       context.pop();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to update post'),
-            backgroundColor: Colors.redAccent),
-      );
+      SnackBarUtils.showError(context, 'Failed to update post');
     }
   }
 
