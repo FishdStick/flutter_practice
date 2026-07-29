@@ -6,7 +6,6 @@ class PostCard extends StatelessWidget {
   final Post post;
   final VoidCallback onTap;
 
-  // Constructor that requires the following NAMED PARAMETERS to be passed
   const PostCard({super.key, required this.post, required this.onTap});
 
   @override
@@ -29,12 +28,15 @@ class PostCard extends StatelessWidget {
               height: 160,
               width: double.infinity,
               child: post.imageUrls.isNotEmpty
-                  ? Image.network(
-                      post.imageUrls.first,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, _, __) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.broken_image, size: 40),
+                  ? Container(
+                      color: Colors.grey[100],
+                      child: Image.network(
+                        post.imageUrls.first,
+                        fit: BoxFit.contain,
+                        errorBuilder: (ctx, _, __) => Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, size: 40),
+                        ),
                       ),
                     )
                   : Container(

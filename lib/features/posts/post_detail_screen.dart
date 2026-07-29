@@ -26,6 +26,122 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     super.dispose();
   }
 
+  // Allows full resolution viewing of post photos
+  void _showImagePreview(
+      BuildContext context, List<String> imageUrls, int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final PageController modalPageController =
+            PageController(initialPage: initialIndex);
+        int activeModalIndex = initialIndex;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Dialog(
+              backgroundColor: Colors.black87,
+              insetPadding: EdgeInsets.zero,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  PageView.builder(
+                      controller: modalPageController,
+                      itemCount: imageUrls.length,
+                      onPageChanged: (idx) {
+                        setModalState(() {
+                          activeModalIndex = idx;
+                        });
+                      },
+                      itemBuilder: (context, idx) {
+                        return InteractiveViewer(
+                          child: Center(
+                            child: Image.network(
+                              imageUrls[idx],
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                      padding: const EdgeInsets.all(16.0),
+                                      color: Colors.white,
+                                      child: const Icon(Icons.broken_image,
+                                          size: 60)),
+                            ),
+                          ),
+                        );
+                      }),
+
+                  // Left Navigation Arrow
+                  if (activeModalIndex > 0)
+                    Positioned(
+                      left: 16,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.black54,
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_left,
+                              color: Colors.white),
+                          onPressed: () {
+                            modalPageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut);
+                          },
+                        ),
+                      ),
+                    ),
+
+                  // Right Navigation Arrow
+                  if (activeModalIndex < imageUrls.length - 1)
+                    Positioned(
+                      right: 16,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.black54,
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_right,
+                              color: Colors.white),
+                          onPressed: () {
+                            modalPageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut);
+                          },
+                        ),
+                      ),
+                    ),
+
+                  // Close Button
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(Icons.close, color: Colors.white)),
+                    ),
+                  ),
+                  if (imageUrls.length > 1)
+                    Positioned(
+                      bottom: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '${activeModalIndex + 1} / ${imageUrls.length}',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -145,16 +261,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             });
                           },
                           itemBuilder: (context, index) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                post.imageUrls[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (ctx, _, __) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image,
-                                      size: 60, color: Colors.grey),
+                            return GestureDetector(
+                              onTap: () => _showImagePreview(
+                                  context, post.imageUrls, index),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    post.imageUrls[index],
+                                    fit: BoxFit.contain,
+                                    width: double.infinity,
+                                    errorBuilder: (ctx, _, __) => Container(
+                                      color: Colors.grey[200],
+                                      child: const Icon(Icons.broken_image,
+                                          size: 60, color: Colors.grey),
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
