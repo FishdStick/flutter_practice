@@ -7,6 +7,7 @@ import '../comments/comment_section.dart';
 import '../../core/utils/format_date_utils.dart';
 import '../../core/utils/image_preview_utils.dart';
 import '../../core/utils/dialog_utils.dart';
+import '../widgets/owner_action_menu.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -65,47 +66,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
         actions: [
           if (isOwner)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) async {
-                if (value == 'edit') {
-                  context.push('/edit-post/${post.id}');
-                } else if (value == 'delete') {
-                  final confirm = await DialogUtils.showConfirmDialog(
-                      context: context,
-                      title: 'Delete Post',
-                      content: 'Are you sure you want to delete this post?',
-                      confirmText: 'Delete');
-                  if (confirm) {
-                    final deleted = await postProvider.deletePost(post.id);
-                    if (context.mounted && deleted) {
-                      context.go('/');
-                    }
+            OwnerActionMenu(
+              onEdit: () {
+                context.push('/edit-post/${post.id}');
+              },
+              onDelete: () async {
+                final confirm = await DialogUtils.showConfirmDialog(
+                    context: context,
+                    title: 'Delete Post',
+                    content: 'Are you sure you want to delete this post?',
+                    confirmText: 'Delete');
+                if (confirm) {
+                  final deleted = await postProvider.deletePost(post.id);
+                  if (context.mounted && deleted) {
+                    context.go('/');
                   }
                 }
               },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 8),
-                      Text('Edit Post'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 20, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete Post', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
             ),
         ],
       ),

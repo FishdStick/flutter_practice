@@ -9,6 +9,7 @@ import '../../core/utils/image_preview_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../posts/image_preview_row.dart';
 import '../../core/models/comment.dart';
+import '../widgets/owner_action_menu.dart';
 
 class CommentSection extends StatefulWidget {
   final String postId;
@@ -223,56 +224,26 @@ class _CommentSectionState extends State<CommentSection> {
                           ),
                         ),
                         if (isOwner)
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert, size: 16),
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
-                                  if (context.mounted) {
-                                    _showEditCommentDialog(context, comment);
-                                  }
-                                });
-                              } else if (value == 'delete') {
-                                final confirm = await DialogUtils.showConfirmDialog(
-                                    context: context,
-                                    title: 'Delete Comment',
-                                    content:
-                                        'Are you sure you want to delete this comment?',
-                                    confirmText: 'Delete');
-                                if (confirm) {
-                                  await commentProvider.deleteComment(
-                                      comment.id, widget.postId);
+                          OwnerActionMenu(
+                            onEdit: () {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (context.mounted) {
+                                  _showEditCommentDialog(context, comment);
                                 }
+                              });
+                            },
+                            onDelete: () async {
+                              final confirm = await DialogUtils.showConfirmDialog(
+                                  context: context,
+                                  title: 'Delete Comment',
+                                  content:
+                                      'Are you sure you want to delete this comment?',
+                                  confirmText: 'Delete');
+                              if (confirm) {
+                                await commentProvider.deleteComment(
+                                    comment.id, widget.postId);
                               }
                             },
-                            // More button option items
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Edit',
-                                        style: TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete,
-                                        size: 16, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text('Delete',
-                                        style: TextStyle(
-                                            fontSize: 13, color: Colors.red)),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ),
                       ],
                     ),
