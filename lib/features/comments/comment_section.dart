@@ -51,47 +51,51 @@ class _CommentSectionState extends State<CommentSection> {
 
           return AlertDialog(
             title: const Text('Edit Comment'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: editController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Comment',
-                      border: OutlineInputBorder(),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: editController,
+                      minLines: 1,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Comment',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      if (await ImagePickerUtils.attachImagesTo(newImages)) {
-                        setModalState(() {});
-                      }
-                    },
-                    icon: const Icon(Icons.attach_file),
-                    label: Text('Attach images ${newImages.length}'),
-                  ),
-                  if (allPreviewPaths.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    ImagePreviewRow(
-                      imageUrls: allPreviewPaths,
-                      // What's idx and where does it come from? is it
-                      // similar to ctx to how it refers to build context?
-                      onDelete: (idx) {
-                        setModalState(() {
-                          if (idx < existingUrls.length) {
-                            existingUrls.removeAt(idx);
-                          } else {
-                            newImages.removeAt(idx - existingUrls.length);
-                          }
-                        });
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        if (await ImagePickerUtils.attachImagesTo(newImages)) {
+                          setModalState(() {});
+                        }
                       },
+                      icon: const Icon(Icons.attach_file),
+                      label: Text('Attach images ${newImages.length}'),
                     ),
+                    if (allPreviewPaths.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      ImagePreviewRow(
+                        imageUrls: allPreviewPaths,
+                        // What's idx and where does it come from? is it
+                        // similar to ctx to how it refers to build context?
+                        onDelete: (idx) {
+                          setModalState(() {
+                            if (idx < existingUrls.length) {
+                              existingUrls.removeAt(idx);
+                            } else {
+                              newImages.removeAt(idx - existingUrls.length);
+                            }
+                          });
+                        },
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             actions: [
@@ -302,6 +306,7 @@ class _CommentSectionState extends State<CommentSection> {
               ),
             ),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               IconButton(
                 icon: const Icon(Icons.attach_file),
@@ -315,10 +320,17 @@ class _CommentSectionState extends State<CommentSection> {
               Expanded(
                 child: TextField(
                   controller: _commentController,
+                  minLines: 1,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   decoration: const InputDecoration(
                     hintText: 'Write a comment...',
                     isDense: true,
                     border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ),

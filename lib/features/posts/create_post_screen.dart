@@ -17,8 +17,9 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  final _postBodyController = TextEditingController();
   final List<XFile> _selectedImages = [];
+  double _postBodyTextFieldHeight = 160.0;
 
   void _uploadPost() async {
     if (!_formKey.currentState!.validate()) {
@@ -26,7 +27,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
 
     final postProvider = context.read<PostProvider>();
-    final text = _contentController.text.trim();
+    final text = _postBodyController.text.trim();
 
     final success = await postProvider.createPost(
       title: _titleController.text.trim(),
@@ -49,7 +50,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _contentController.dispose();
+    _postBodyController.dispose();
     super.dispose();
   }
 
@@ -73,93 +74,128 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: Card(
               elevation: 3,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _titleController,
-                            decoration: const InputDecoration(
-                                labelText: 'Title',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.title)),
-                            validator: (value) =>
-                                (value == null || value.trim().isEmpty)
-                                    ? 'Please enter a title'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Post Title Text Field
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                            labelText: 'Post Title',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.title)),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                                ? 'Please enter a title'
+                                : null,
+                      ),
+                      const SizedBox(height: 16),
 
-                          TextFormField(
-                            controller: _contentController,
-                            maxLines: 16,
-                            minLines: 4,
-                            decoration: const InputDecoration(
+                      // Post Body Text Field
+                      SizedBox(
+                        height: _postBodyTextFieldHeight,
+                        child: Stack(
+                          children: [
+                            TextFormField(
+                              controller: _postBodyController,
+                              maxLines: null,
+                              expands: true,
+                              keyboardType: TextInputType.multiline,
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: const InputDecoration(
                                 labelText: 'Post body',
                                 border: OutlineInputBorder(),
-                                alignLabelWithHint: true),
-                            validator: (value) =>
-                                (value == null || value.trim().isEmpty)
-                                    ? 'Please enter post body'
-                                    : null,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Attachment Button
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              if (await ImagePickerUtils.attachImagesTo(
-                                  _selectedImages)) {
-                                setState(() {});
-                              }
-                            },
-                            icon: const Icon(Icons.add_photo_alternate),
-                            label: Text(
-                                'Attach images (${_selectedImages.length})'),
-                            style: OutlinedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14)),
-                          ),
-                          const SizedBox(height: 12),
-
-                          if (_selectedImages.isNotEmpty)
-                            ImagePreviewRow(
-                              imageUrls:
-                                  _selectedImages.map((e) => e.path).toList(),
-                              onDelete: (index) {
-                                setState(() {
-                                  _selectedImages.removeAt(index);
-                                });
-                              },
+                                alignLabelWithHint: true,
+                                contentPadding:
+                                    EdgeInsets.fromLTRB(12, 16, 28, 16),
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.trim().isEmpty)
+                                      ? 'Please enter post body'
+                                      : null,
                             ),
-                          const SizedBox(height: 24),
-
-                          ElevatedButton(
-                            onPressed:
-                                postProvider.isLoading ? null : _uploadPost,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            Positioned(
+                              right: 2,
+                              bottom: 2,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onVerticalDragUpdate: (details) {
+                                  setState(() {
+                                    _postBodyTextFieldHeight =
+                                        (_postBodyTextFieldHeight +
+                                                details.delta.dy)
+                                            .clamp(120.0, 500.0);
+                                  });
+                                },
+                                child: const MouseRegion(
+                                  cursor: SystemMouseCursors.resizeUpDown,
+                                  child: Padding(
+                                      padding: EdgeInsets.all(6.0),
+                                      child: Icon(Icons.drag_indicator,
+                                          size: 16, color: Colors.grey)),
+                                ),
                               ),
                             ),
-                            child: postProvider.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Text('Publish Post',
-                                    style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Attachment Button
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          if (await ImagePickerUtils.attachImagesTo(
+                              _selectedImages)) {
+                            setState(() {});
+                          }
+                        },
+                        icon: const Icon(Icons.add_photo_alternate),
+                        label:
+                            Text('Attach images (${_selectedImages.length})'),
+                        style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (_selectedImages.isNotEmpty)
+                        ImagePreviewRow(
+                          imageUrls:
+                              _selectedImages.map((e) => e.path).toList(),
+                          onDelete: (index) {
+                            setState(() {
+                              _selectedImages.removeAt(index);
+                            });
+                          },
+                        ),
+                      const SizedBox(height: 24),
+
+                      ElevatedButton(
+                        onPressed: postProvider.isLoading ? null : _uploadPost,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ],
-                      ))),
+                        ),
+                        child: postProvider.isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Publish Post',
+                                style: TextStyle(fontSize: 16)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
