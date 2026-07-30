@@ -8,6 +8,7 @@ import '../../core/providers/comment_provider.dart';
 import '../../core/utils/image_preview_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../posts/image_preview_row.dart';
+import '../widgets/resizeable_text_field.dart';
 import '../../core/models/comment.dart';
 import '../widgets/owner_action_menu.dart';
 
@@ -21,7 +22,7 @@ class CommentSection extends StatefulWidget {
 }
 
 class _CommentSectionState extends State<CommentSection> {
-  final _commentController = TextEditingController();
+  final _commentTextFieldController = TextEditingController();
 
   List<XFile> _selectedImages = [];
   bool _isSubmitting = false;
@@ -36,7 +37,7 @@ class _CommentSectionState extends State<CommentSection> {
 
   // Edit Comment dialog box
   void _showEditCommentDialog(BuildContext context, Comment comment) {
-    final editController = TextEditingController(text: comment.content);
+    final editCommentController = TextEditingController(text: comment.content);
     List<String> existingUrls = List<String>.from(comment.imageUrls);
     List<XFile> newImages = [];
 
@@ -58,15 +59,12 @@ class _CommentSectionState extends State<CommentSection> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
-                      controller: editController,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
+                    ResizeableTextArea(
+                        textFieldController: editCommentController,
                         labelText: 'Comment',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
+                        initialHeight: 120.0,
+                        minHeight: 80.0,
+                        maxHeight: 300.0),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: () async {
@@ -105,7 +103,7 @@ class _CommentSectionState extends State<CommentSection> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  final text = editController.text.trim();
+                  final text = editCommentController.text.trim();
                   if (text.isEmpty &&
                       existingUrls.isEmpty &&
                       newImages.isEmpty) {
@@ -140,7 +138,7 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   void _postComment() async {
-    final text = _commentController.text.trim();
+    final text = _commentTextFieldController.text.trim();
     if (text.isEmpty && _selectedImages.isEmpty) return;
 
     setState(() => _isSubmitting = true);
@@ -158,7 +156,7 @@ class _CommentSectionState extends State<CommentSection> {
     }
     setState(() => _isSubmitting = false);
     if (success) {
-      _commentController.clear();
+      _commentTextFieldController.clear();
       setState(() {
         _selectedImages = [];
       });
@@ -170,7 +168,7 @@ class _CommentSectionState extends State<CommentSection> {
 
   @override
   void dispose() {
-    _commentController.dispose();
+    _commentTextFieldController.dispose();
     super.dispose();
   }
 
@@ -318,21 +316,12 @@ class _CommentSectionState extends State<CommentSection> {
                 tooltip: 'Attach Images:',
               ),
               Expanded(
-                child: TextField(
-                  controller: _commentController,
-                  minLines: 1,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    hintText: 'Write a comment...',
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                ),
+                child: ResizeableTextArea(
+                    textFieldController: _commentTextFieldController,
+                    labelText: 'Write a comment',
+                    initialHeight: 48.0,
+                    minHeight: 44.0,
+                    maxHeight: 200.0),
               ),
               const SizedBox(width: 8),
               IconButton(

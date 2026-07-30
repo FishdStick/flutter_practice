@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/post_provider.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../widgets/resizeable_text_field.dart';
 import 'image_preview_row.dart';
 
 class EditPostScreen extends StatefulWidget {
@@ -114,53 +115,13 @@ class _EditPostScreenState extends State<EditPostScreen> {
                       const SizedBox(height: 16),
 
                       // Post Body Text Field
-                      SizedBox(
-                        height: _postBodyTextFieldHeight,
-                        child: Stack(
-                          children: [
-                            TextFormField(
-                              controller: _postBodyController,
-                              maxLines: null,
-                              expands: true,
-                              keyboardType: TextInputType.multiline,
-                              textAlignVertical: TextAlignVertical.top,
-                              decoration: const InputDecoration(
-                                labelText: 'Post body',
-                                border: OutlineInputBorder(),
-                                alignLabelWithHint: true,
-                                contentPadding:
-                                    EdgeInsets.fromLTRB(12, 16, 28, 16),
-                              ),
-                              validator: (value) =>
-                                  (value == null || value.trim().isEmpty)
-                                      ? 'Please enter post body'
-                                      : null,
-                            ),
-                            Positioned(
-                              right: 2,
-                              bottom: 2,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.translucent,
-                                onVerticalDragUpdate: (details) {
-                                  setState(() {
-                                    _postBodyTextFieldHeight =
-                                        (_postBodyTextFieldHeight +
-                                                details.delta.dy)
-                                            .clamp(120.0, 500.0);
-                                  });
-                                },
-                                child: const MouseRegion(
-                                  cursor: SystemMouseCursors.resizeUpDown,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(6.0),
-                                    child: Icon(Icons.drag_indicator,
-                                        size: 16, color: Colors.grey),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      ResizeableTextArea(
+                        textFieldController: _postBodyController,
+                        labelText: 'Post body',
+                        validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                            ? 'Please enter post body'
+                            : null,
                       ),
                       const SizedBox(height: 16),
 
