@@ -6,6 +6,7 @@ import '../../core/providers/post_provider.dart';
 import '../comments/comment_section.dart';
 import '../../core/utils/format_date_utils.dart';
 import '../../core/utils/image_preview_utils.dart';
+import '../../core/utils/dialog_utils.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -70,26 +71,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 if (value == 'edit') {
                   context.push('/edit-post/${post.id}');
                 } else if (value == 'delete') {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Post'),
-                      content: const Text(
-                          'Are you sure you want to delete this post?'),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel')),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Delete',
-                              style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
+                  final confirm = await DialogUtils.showConfirmDialog(
+                      context: context,
+                      title: 'Delete Post',
+                      content: 'Are you sure you want to delete this post?',
+                      confirmText: 'Delete');
+                  if (confirm) {
                     final deleted = await postProvider.deletePost(post.id);
                     if (context.mounted && deleted) {
                       context.go('/');
@@ -147,8 +134,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           },
                           itemBuilder: (context, index) {
                             return GestureDetector(
-                              onTap: () => ImagePreviewUtils.expandPreviewImageGallery(
-                                  context, post.imageUrls, index),
+                              onTap: () =>
+                                  ImagePreviewUtils.expandPreviewImageGallery(
+                                      context, post.imageUrls, index),
                               child: Container(
                                 decoration: BoxDecoration(
                                     color: Colors.grey[100],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_practice/core/utils/dialog_utils.dart';
 import 'package:flutter_practice/core/utils/image_picker_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -233,31 +234,13 @@ class _CommentSectionState extends State<CommentSection> {
                                   }
                                 });
                               } else if (value == 'delete') {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text('Delete Comment'),
-                                    content: const Text(
-                                        'Are you sure you want to delete this comment?'),
-                                    actions: [
-                                      // Cancel Button
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      // Delete Button
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: const Text('Delete',
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
+                                final confirm = await DialogUtils.showConfirmDialog(
+                                    context: context,
+                                    title: 'Delete Comment',
+                                    content:
+                                        'Are you sure you want to delete this comment?',
+                                    confirmText: 'Delete');
+                                if (confirm) {
                                   await commentProvider.deleteComment(
                                       comment.id, widget.postId);
                                 }
