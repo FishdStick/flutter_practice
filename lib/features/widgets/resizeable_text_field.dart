@@ -29,7 +29,23 @@ class _ResizeableTextAreaState extends State<ResizeableTextArea> {
   @override
   void initState(){
     super.initState();
-    _textFieldHeight = widget.initialHeight;
+    _textFieldHeight = _calculateInitialHeight();
+  }
+
+  double _calculateInitialHeight(){
+    final text = widget.textFieldController.text;
+
+    if(text.isEmpty){
+      return  widget.initialHeight;
+    }
+
+    final lineCount = text.split('\n').fold<int>(0,(total, line) {
+      return total + (line.length / 55).ceil().clamp(1, 100);
+    });
+
+    final estimatedHeight = (lineCount * 20.0) + 40.0;
+
+    return estimatedHeight.clamp(widget.minHeight, widget.maxHeight);
   }
 
   @override

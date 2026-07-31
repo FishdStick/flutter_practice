@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_practice/core/utils/snackbar_utils.dart';
+import 'package:flutter_practice/features/posts/image_preview_row.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/models/post.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
+import '../../core/utils/image_picker_utils.dart';
 import '../comments/comment_section.dart';
 import '../../core/utils/format_date_utils.dart';
 import '../../core/utils/image_preview_utils.dart';
 import '../../core/utils/dialog_utils.dart';
 import '../widgets/owner_action_menu.dart';
+import '../widgets/resizeable_text_field.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -22,6 +27,118 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final PageController _pageController = PageController();
   final DateFormattingUtils formatDateUtil = DateFormattingUtils();
   int _currentImageIndex = 0;
+
+  void _showEditPostDialog(BuildContext context, Post post) {
+    final formKey = GlobalKey<FormState>();
+    final editPostTitleController = TextEditingController(text: post.title);
+    final editPostBodyController = TextEditingController(text: post.content);
+    List<String> existingImageUrls = List<String>.from(post.imageUrls);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(builder: (ctx, setModalState) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Edit Post',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                              onPressed: () => Navigator.pop(dialogCtx),
+                              icon: const Icon(Icons.close)),
+                        ],
+                      ),
+                      TextFormField(
+                        controller: editPostTitleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Post Title',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                                ? 'Please enter a title'
+                                : null,
+                      ),
+                      const SizedBox(height: 16),
+                      ResizeableTextArea(
+                          textFieldController: editPostBodyController,
+                          labelText: 'Post body',
+                          initialHeight: 120.0,
+                          minHeight: 120.0,
+                          maxHeight: 450.0),
+                      const SizedBox(height: 16),
+                      if (existingImageUrls.isNotEmpty) ...[
+                        ImagePreviewRow(
+                          imageUrls: existingImageUrls,
+                          onDelete: (index) {
+                            setModalState(() {
+                              existingImageUrls.removeAt(index);
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Action buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(dialogCtx),
+                              child: const Text('Cancel')),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                              onPressed: () async {
+                                if (!formKey.currentState!.validate()) return;
+
+                                final success = await context
+                                    .read<PostProvider>()
+                                    .updatePost(
+                                  postId: post.id,
+                                  title: editPostTitleController.text.trim(),
+                                  content: editPostBodyController.text.trim(),
+                                  existingImageUrls: existingImageUrls,
+                                  newImages: [], //will this remove images when i edit a post?
+                                );
+
+                                if (dialogCtx.mounted) {
+                                  Navigator.pop(dialogCtx);
+                                  if (success) {
+                                    SnackBarUtils.showSuccess(
+                                        context, 'Post updated.');
+                                  } else {
+                                    SnackBarUtils.showError(
+                                        context, 'Failed to update post.');
+                                  }
+                                }
+                              },
+                              child: const Text('Save Changes'))
+                        ],
+                      )
+                    ],
+                  )),
+            ),
+          ),
+        );
+      }),
+    );
+  }
 
   @override
   void dispose() {
@@ -68,7 +185,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           if (isOwner)
             OwnerActionMenu(
               onEdit: () {
-                context.push('/edit-post/${post.id}');
+                _showEditPostDialog(context, post);
+                // context.push('/edit-post/${post.id}');
               },
               onDelete: () async {
                 final confirm = await DialogUtils.showConfirmDialog(
