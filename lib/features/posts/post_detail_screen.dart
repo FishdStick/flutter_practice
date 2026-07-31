@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/post.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/post_provider.dart';
-import '../../core/utils/image_picker_utils.dart';
 import '../comments/comment_section.dart';
 import '../../core/utils/format_date_utils.dart';
 import '../../core/utils/image_preview_utils.dart';

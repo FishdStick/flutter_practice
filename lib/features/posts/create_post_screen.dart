@@ -20,7 +20,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _titleController = TextEditingController();
   final _postBodyController = TextEditingController();
   final List<XFile> _selectedImages = [];
-  double _postBodyTextFieldHeight = 160.0;
 
   void _uploadPost() async {
     if (!_formKey.currentState!.validate()) {

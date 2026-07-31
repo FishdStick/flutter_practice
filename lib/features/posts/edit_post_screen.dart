@@ -23,7 +23,6 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
   List<String> _existingImageUrls = [];
   final List<XFile> _newImages = [];
-  double _postBodyTextFieldHeight = 140.0;
 
   @override
   void initState() {
