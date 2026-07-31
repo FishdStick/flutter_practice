@@ -114,6 +114,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   content: editPostBodyController.text.trim(),
                                   existingImageUrls: existingImageUrls,
                                   newImages: [], //will this remove images when i edit a post?
+                                  // It didnt
                                 );
 
                                 if (dialogCtx.mounted) {
@@ -156,7 +157,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     if (post == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Post Details')),
+        appBar: AppBar(title: const Text('Back To Feed')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -164,7 +165,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               const Text('Post does not exist'),
               const SizedBox(height: 16),
               ElevatedButton(
-                  onPressed: () => context.go('/'),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/');
+                    }
+                  },
                   child: const Text('Back to Main Feed')),
             ],
           ),
@@ -175,33 +182,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Post Details'),
+        title: const Text('Back To Feed'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => context.go('/'),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
-        actions: [
-          if (isOwner)
-            OwnerActionMenu(
-              onEdit: () {
-                _showEditPostDialog(context, post);
-                // context.push('/edit-post/${post.id}');
-              },
-              onDelete: () async {
-                final confirm = await DialogUtils.showConfirmDialog(
-                    context: context,
-                    title: 'Delete Post',
-                    content: 'Are you sure you want to delete this post?',
-                    confirmText: 'Delete');
-                if (confirm) {
-                  final deleted = await postProvider.deletePost(post.id);
-                  if (context.mounted && deleted) {
-                    context.go('/');
-                  }
-                }
-              },
-            ),
-        ],
       ),
       body: Center(
         child: ConstrainedBox(
@@ -284,8 +275,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Dots
                   if (post.imageUrls.length > 1)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -309,25 +298,58 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
                 // Author and Date
                 Row(
+                  // Since there are 2 children rows, spaceBetween separates
+                  // to both ends of the ConstrainedBox
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Author
-                    Text(
-                      'BY ${post.authorEmail.toUpperCase()}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
-                        letterSpacing: 1.0,
-                      ),
+                    Row(
+                      children: [
+                        // Author
+                        Text(
+                          'BY ${post.authorEmail.toUpperCase()}   •   ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        // Date
+                        Text(
+                          formattedDate,
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ],
                     ),
-                    // Date
-                    Text(
-                      formattedDate,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    Row(
+                      children: [
+                        if (isOwner)
+                          OwnerActionMenu(
+                            onEdit: () {
+                              _showEditPostDialog(context, post);
+                            },
+                            onDelete: () async {
+                              final confirm = await DialogUtils.showConfirmDialog(
+                                  context: context,
+                                  title: 'Delete Post',
+                                  content:
+                                      'Are you sure you want to delete this post?',
+                                  confirmText: 'Delete');
+                              if (confirm) {
+                                final deleted =
+                                    await postProvider.deletePost(post.id);
+                                if (context.mounted && deleted) {
+                                  context.go('/');
+                                }
+                              }
+                            },
+                          ),
+                      ],
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 12),
 
                 // Post Title

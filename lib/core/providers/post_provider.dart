@@ -15,11 +15,8 @@ class PostProvider extends ChangeNotifier {
   final int _pageSize = 6;
 
   List<Post> get posts => _posts;
-
   bool get isLoading => _isLoading;
-
   int get currentPage => _currentPage;
-
   int get totalPages => _totalPages;
 
   Future<void> getPage(int page) async {

@@ -19,7 +19,14 @@ class _FeedScreenState extends State<FeedScreen> {
 
     // Fetches post when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PostProvider>().getPage(1);
+      final postProvider = context.read<PostProvider>();
+      if (postProvider.posts.isEmpty) {
+        context.read<PostProvider>().getPage(1);
+      } else {
+        context.read<PostProvider>().getPage(postProvider.currentPage);
+      }
+
+
     });
   }
 
@@ -106,7 +113,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                         return PostCard(
                                           post: post,
                                           onTap: () =>
-                                              context.go('/post/${post.id}'),
+                                              context.push('/post/${post.id}'),
                                         );
 
                                       });

@@ -8,7 +8,6 @@ import '../../features/auth/login_screen.dart';
 import '../../features/posts/feed_screen.dart';
 import '../../features/posts/create_post_screen.dart';
 import '../../features/posts/post_detail_screen.dart';
-import '../../features/posts/edit_post_screen.dart';
 
 GoRouter createRouter(BuildContext context){
   return GoRouter(
@@ -34,13 +33,6 @@ GoRouter createRouter(BuildContext context){
           final postId = state.pathParameters['id']!;
           return PostDetailScreen(postId: postId);
         }
-      ),
-      GoRoute(
-        path: '/edit-post/:id',
-        builder: (context, state) {
-          final postId = state.pathParameters['id']!;
-          return EditPostScreen(postId: postId);
-        },
       ),
     ],
 
